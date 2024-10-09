@@ -1,0 +1,42 @@
+#include <iostream>
+
+using namespace std;
+
+class gasolina {
+private:
+    char* tipo;
+    float capacidadmax;
+    float cantidadActual;
+    float precioLitro;
+
+public:
+    gasolina(const char* tipoGasolina, float capacidad, float precio)
+        : capacidadmax(capacidad), cantidadActual(capacidad), precioLitro(precio){
+        tipo = new char[20];
+        for (int i = 0; i < 20 && tipoGasolina[i]; i++){
+            tipo[i] = tipoGasolina[i];
+        }
+    }
+
+    ~gasolina(){
+        delete[] tipo;
+    }
+
+    void vender(float cantidad){
+        if(cantidadActual >= cantidad){
+            cantidadActual -= cantidad;
+            cout << "venta exitosa de " << cantidad << "litros de " << tipo << endl;
+        }else{
+            cout << "no hay suficiente " << tipo << ". Hay" << cantidadActual << "de litros disponibles." << endl;
+            cantidad = cantidadActual;
+            cantidadActual = 0;
+        }
+    }
+
+    float getcantidadactual(){
+        return cantidadActual;
+    }
+    float getprecio(){
+        return precioLitro;
+    }
+};
