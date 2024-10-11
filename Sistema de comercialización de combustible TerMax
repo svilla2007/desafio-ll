@@ -40,3 +40,250 @@ public:
         return precioLitro;
     }
 };
+
+class transaccion {
+
+private:
+    float cantidadLitros;
+    char tipoGasolina[20];
+    char metodoPago[20];
+    float precioTotal;
+
+public:
+    transaccion(float litros, const char* tipo, const char* metodo, float total)
+        :cantidadLitros(litros), precioTotal(total){
+        for(int i = 0; i < 20 && tipo[i]; i++){
+            tipoGasolina[i] = tipo[i];
+        }
+        for(int i = 0; i < 20 && tipo[i]; i++){
+            metodoPago[i] = metodo[i];
+        }
+    }
+
+    void mostraeTransaccion(){
+        cout << "gasolina: " << tipoGasolina << endl
+             << "cantidad: " << cantidadLitros << "litos" << endl
+             << "metodo de pago: " << metodoPago << endl
+             << "total: " << precioTotal << endl;
+    }
+
+};
+
+class nodoTransaccion {
+public:
+    transaccion* Transaccion;
+    nodoTransaccion* siguiente;
+
+    nodoTransaccion(transaccion* tran) : Transaccion(tran), siguiente(nullptr) {}
+    ~nodoTransaccion(){
+        delete Transaccion;
+    }
+};
+
+class surtidor {
+private:
+    int codigo;
+    bool activo;
+    nodoTransaccion* transacciones;
+
+public:
+    surtidor(int cod) : codigo(cod), activo(true), transacciones(nullptr){
+        for(int i = 0; i < 20; i++ ){}
+
+    }
+
+        ~surtidor(){
+            while (transacciones){
+                nodoTransaccion* temp = transacciones;
+                transacciones = transacciones ->siguiente;
+                delete temp;
+            }
+        }
+
+        void activar(){
+            activo = true;
+            cout << "surtidor " << codigo << "activado" << endl;
+        }
+
+        void desactivar(){
+            activo = false;
+            cout << "surtidor " << codigo << "desactivado" << endl;
+        }
+
+        bool estaActivo(){
+            return activo;
+        }
+        void registrarVenta(transaccion* transaccion){
+            if(activo) {
+                nodoTransaccion* nuevo = new nodoTransaccion(transaccion);
+                nuevo->siguiente = transacciones;
+                transacciones = nuevo;
+                cout << "venta registrada por el surtidor" << codigo << endl;
+            }else{
+                cout << "el surtidor esta inactivo" << endl;
+            }
+        }
+        void mostrar(){
+            cout << "ventas del surtidor " << codigo << endl;
+            nodoTransaccion* actual = transacciones;
+            while (actual != nullptr) {
+                actual -> Transaccion ->mostraeTransaccion();
+                actual = actual ->siguiente;
+            }
+        }
+};
+
+class nodosurtidor{
+public:
+    surtidor* Surtidor;
+    nodosurtidor* siguiente;
+
+    nodosurtidor(surtidor* s) : Surtidor(s), siguiente(nullptr){}
+    ~nodosurtidor(){
+        delete Surtidor;
+    }
+};
+
+class estacion{
+private:
+    char nombre[20];
+    int codigo;
+    char gerente[20];
+    char region[20];
+    nodosurtidor* surtidores;
+    gasolina regular;
+    gasolina premium;
+    gasolina ecoextra;
+
+public:
+    estacion(const char* nom, int cod, const char* gere, const char* reg, float regu, float pre, float eco )
+        : codigo(cod), regular("regular", regu, 5000), premium("premium", pre, 6000), ecoextra("ecoExtra", eco, 7000){
+        for (int i = 0; i < 20 && nom[i]; i++){
+            nombre[i] = nom[i];
+        }
+        for (int i = 0; i < 20 && gere[i]; i++){
+            gerente[i] = gere[i];
+        }
+        for (int i = 0; i < 20 && reg[i]; i++){
+            region[i] = reg[i];
+        }
+
+        surtidores = nullptr;
+    }
+    ~estacion(){
+        while (surtidores) {
+            nodosurtidor* temp = surtidores;
+            surtidores = surtidores -> siguiente;
+            delete temp;
+        }
+    }
+
+    void agregarsurtidor(surtidor* s){
+        nodosurtidor* nuevo = new nodosurtidor(s);
+        nuevo -> siguiente = surtidores;
+        surtidores = nuevo;
+        cout << "surtidore agregado a la estacion: " << nombre << endl;
+    }
+
+    void simularventa(){
+        if (surtidores == nullptr){
+            cout << "no hay surtidores en la estacion";
+            return;
+        }
+        nodosurtidor* actual = surtidores;
+        int cantidadsurtidores = 0;
+
+        while (actual) {
+            if (actual -> Surtidor -> estaActivo()){
+                cantidadsurtidores++;
+            }
+            actual = actual -> siguiente;
+        }
+        if (cantidadsurtidores == 0){
+            cout << "no hay surtidores activos" << endl;
+            return;
+        }
+
+        int surtidorR = rand() % cantidadsurtidores;
+        actual = surtidores;
+        while (surtidorR > 0 || !actual -> Surtidor -> estaActivo()) {
+            if (actual -> Surtidor ->estaActivo()) surtidorR--;
+            actual = actual -> siguiente;
+        }
+
+        float litros = rand() % 18 + 3;
+        int tipogasolina = rand() % 3;
+        float precio = 0;
+        const char* tipo;
+
+        if (tipogasolina == 0){
+            regular.vender(litros);
+            precio = regular.getprecio();
+            tipo = "regular";
+        }else if (tipogasolina == 1){
+            premium.vender(litros);
+            precio = premium.getprecio();
+            tipo = "premium";
+        }else{
+            ecoextra.vender(litros);
+            precio = ecoextra.getprecio();
+            tipo = "EcoExtra";
+        }
+
+        float total = litros * precio;
+        const char* metodoPago = "efectivo";
+        transaccion* Transaccion = new transaccion(litros, tipo, metodoPago, total);
+        actual -> Surtidor ->registrarVenta(Transaccion);
+
+        cout << "venta de: " << litros << "litros de " << tipo <<  endl;
+    }
+};
+
+class nodoE{
+public:
+    estacion* E;
+    nodoE* siguiente;
+
+    nodoE(estacion* est): E(est), siguiente(nullptr){}
+    ~nodoE(){
+        delete E;
+    }
+};
+
+class redestaciones{
+private:
+    nodoE* estaciones;
+
+public:
+    redestaciones() : estaciones(nullptr){}
+
+    ~redestaciones(){
+
+        while (estaciones){
+            nodoE* temp = estaciones;
+            estaciones = estaciones -> siguiente;
+            delete temp;
+        }
+    }
+
+    void agregarestacion(estacion* E){
+
+        nodoE* nuevo = new nodoE(E);
+        nuevo -> siguiente -> E;
+        estaciones = nuevo;
+        cout << "estacion agregada" << endl;
+    }
+};
+
+int main (){
+    redestaciones red;
+    estacion* estacion1 = new estacion("estacion1", 123, "gerente1", "region1", 500, 300, 200 );
+    red.agregarestacion(estacion1);
+
+    surtidor* s = new surtidor(1);
+    estacion1 ->agregarsurtidor(s);
+
+    estacion1 -> simularventa();
+
+    return 0;
+};
